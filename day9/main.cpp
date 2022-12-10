@@ -4,8 +4,8 @@
 #include <utility>
 #include <set>
 
-#define str_head "head"
-#define str_tail "tail"
+#define str_head "  head"
+#define str_tail "  tail"
 
 using namespace std;
 
@@ -29,12 +29,12 @@ read_file(string filename)
     return lines;
 }
 
-void print_pos(pair<uint32_t, uint32_t> head, string name)
+void print_pos(pair<int32_t, int32_t> head, string name)
 {
     cout << name << " pos: " << head.second << ":" << head.first << endl;
 }
 
-void compute_same_axis(pair<uint32_t, uint32_t> &head, pair<uint32_t, uint32_t> &tail)
+void compute_same_axis(pair<int32_t, int32_t> &head, pair<int32_t, int32_t> &tail)
 {
     // check rows
     int32_t delta = head.first - tail.first;
@@ -75,7 +75,7 @@ void compute_same_axis(pair<uint32_t, uint32_t> &head, pair<uint32_t, uint32_t> 
     }
 }
 
-void compute_diagonale(pair<uint32_t, uint32_t> &head, pair<uint32_t, uint32_t> &tail)
+void compute_diagonale(pair<int32_t, int32_t> &head, pair<int32_t, int32_t> &tail)
 {
     int32_t delta_row = head.first - tail.first;
     int32_t delta_ol = head.second - tail.second;
@@ -113,14 +113,14 @@ void compute_diagonale(pair<uint32_t, uint32_t> &head, pair<uint32_t, uint32_t> 
     }
 }
 
-bool head_is_diagonal(pair<uint32_t, uint32_t> &head, pair<uint32_t, uint32_t> &tail)
+bool head_is_diagonal(pair<int32_t, int32_t> &head, pair<int32_t, int32_t> &tail)
 {
     int32_t row_diff = head.first - tail.first;
     int32_t col_diff = head.second - tail.second;
-    return (abs(row_diff) == 2 && abs(col_diff) == 1) || (abs(row_diff) == 1 && abs(col_diff) == 2);
+    return (abs(row_diff) == 2 && abs(col_diff) >= 1) || (abs(row_diff) >= 1 && abs(col_diff) == 2);
 }
 
-void compute_tail_pos(pair<uint32_t, uint32_t> &head, pair<uint32_t, uint32_t> &tail)
+void compute_tail_pos(pair<int32_t, int32_t> &head, pair<int32_t, int32_t> &tail)
 {
     // first case: they are on the col / row
     if (head.first == tail.first || head.second == tail.second)
@@ -140,9 +140,9 @@ uint32_t part1(vector<string> &lines)
     uint32_t sum = 0;
 
     // row,col
-    pair<uint32_t, uint32_t> head(0, 0);
-    pair<uint32_t, uint32_t> tail(0, 0);
-    set<pair<uint32_t, uint32_t>> tail_history;
+    pair<int32_t, int32_t> head(0, 0);
+    pair<int32_t, int32_t> tail(0, 0);
+    set<pair<int32_t, int32_t>> tail_history;
 
     print_pos(head, str_head);
     tail_history.insert(tail);
@@ -174,25 +174,73 @@ uint32_t part1(vector<string> &lines)
             }
             print_pos(head, str_head);
             compute_tail_pos(head, tail);
-            pair<uint32_t, uint32_t> copy(tail);
+            pair<int32_t, int32_t> copy(tail);
             tail_history.insert(copy);
             print_pos(tail, str_tail);
         }
     }
 
-    cout << "tail history: " << tail_history.size() << endl;
+    sum = tail_history.size();
 
     return sum;
 }
 
 uint32_t part2(vector<string> lines)
 {
+    uint32_t sum = 0;
 
-    uint32_t highest = 0;
+    // row,col
+    vector<pair<int32_t, int32_t>> rope;
+    for (int i = 0; i < 10; i++)
+    {
+        rope.push_back(pair<int32_t, int32_t>(0, 0));
+    }
+    set<pair<int32_t, int32_t>> tail_history;
 
-    
+    print_pos(rope[0], str_head);
+    tail_history.insert(rope[9]);
 
-    return highest;
+    for (auto &line : lines)
+    {
+        char str_dir = line[0];
+        uint32_t nr = stoul(line.substr(line.find(' ') + 1));
+
+        for (int i = 0; i < nr; ++i)
+        {
+            switch (str_dir)
+            {
+            case 'L':
+                rope[0].second -= 1;
+                break;
+            case 'U':
+                rope[0].first += 1;
+                break;
+            case 'R':
+                rope[0].second += 1;
+                break;
+            case 'D':
+                rope[0].first -= 1;
+                break;
+
+            default:
+                break;
+            }
+            print_pos(rope[0], str_head);
+
+            for (auto it = rope.begin() + 1; it != rope.end(); ++it)
+            {
+                compute_tail_pos(*(it - 1), *it);
+                print_pos(*it, "node");
+            }
+            pair<uint32_t, uint32_t> copy(rope[9]);
+            tail_history.insert(copy);
+            print_pos(rope[9], str_tail);
+        }
+    }
+
+    sum = tail_history.size();
+
+    return sum;
 }
 
 int main(int argc, char **argv)
@@ -204,6 +252,7 @@ int main(int argc, char **argv)
     }
 
     vector<string> lines = read_file(argv[1]);
-    part1(lines);
+    auto res = part2(lines);
+    cout << "result: " << res << endl;
     return 0;
 }
